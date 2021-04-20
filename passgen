@@ -1,0 +1,50 @@
+#!/usr/bin/python3
+
+import argparse
+
+from string import ascii_lowercase, ascii_uppercase, digits, punctuation
+from random import choice
+
+parser = argparse.ArgumentParser(description="password generator in python")
+parser.add_argument('length', default=32, type=int, nargs='?')
+
+arguments = {
+    "no-special": "Removes all special characters",
+    "no-upper": "Removes all capital case letters",
+    "no-lower": "Removes all lower case letters",
+    "no-digits": "Removes all numbers",
+    "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them"
+}
+
+
+for argument in arguments:
+    parser.add_argument("--"+argument, help=arguments[argument], action='store_true')
+parser.add_argument("--verbose", "-v", action='store_true')
+parser.add_argument("--exclude-chars", "-e", nargs="?", default="")
+args = parser.parse_args()
+
+if args.verbose:
+    print(args)
+
+all_chars = ""
+if not args.all_special:
+    punctuation = "".join(c for c in punctuation if c not in "~`^'\"")
+    
+if not args.no_digits:
+    all_chars += digits
+if not args.no_special:
+    all_chars += punctuation
+if not args.no_upper:
+    all_chars += ascii_uppercase
+if not args.no_lower:
+    all_chars += ascii_lowercase
+
+if args.exclude_chars != "":
+    all_chars = "".join(char for char in all_chars if char not in args.exclude_chars)
+
+password = []
+for _ in range(args.length):
+    password.append( choice(all_chars))
+password_txt = "".join(password)
+
+print(password_txt)
