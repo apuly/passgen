@@ -48,10 +48,6 @@ if args.verbose:
     all_char_string = "".join(sorted(all_chars))
     print(f"possible characters: {all_char_string}")
 
-
-password = []
-for _ in range(args.length):
-    password.append(sample(all_chars, 1)[0])
-password_txt = "".join(password)
+password_txt = "".join(sample(all_chars, 1)[0] for _ in range(args.length))
 
 print(password_txt)
