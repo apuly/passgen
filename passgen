@@ -3,7 +3,7 @@
 import argparse
 
 from string import ascii_lowercase, ascii_uppercase, digits, punctuation
-from random import choice
+from random import sample
 
 parser = argparse.ArgumentParser(description="password generator in python")
 parser.add_argument('length', default=32, type=int, nargs='?')
@@ -16,35 +16,39 @@ arguments = {
     "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them"
 }
 
-
 for argument in arguments:
     parser.add_argument("--"+argument, help=arguments[argument], action='store_true')
 parser.add_argument("--verbose", "-v", action='store_true')
 parser.add_argument("--exclude-chars", "-e", nargs="?", default="")
+parser.add_argument("--include-chars", "-i", nargs="?", default="")
+
 args = parser.parse_args()
 
 if args.verbose:
     print(args)
 
-all_chars = ""
+all_chars = set()
 if not args.all_special:
     punctuation = "".join(c for c in punctuation if c not in "~`^'\"")
-    
 if not args.no_digits:
-    all_chars += digits
+    all_chars = all_chars.union(set(digits))
 if not args.no_special:
-    all_chars += punctuation
+    all_chars = all_chars.union(set(punctuation))
 if not args.no_upper:
-    all_chars += ascii_uppercase
+    all_chars = all_chars.union(set(ascii_uppercase))
 if not args.no_lower:
-    all_chars += ascii_lowercase
+    all_chars = all_chars.union(set(ascii_lowercase))
 
 if args.exclude_chars != "":
-    all_chars = "".join(char for char in all_chars if char not in args.exclude_chars)
+    for char in args.exclude_chars:
+        if char in all_chars:
+            all_chars.remove(char)
+if args.include_chars != "":
+    all_chars = all_chars.union(set(args.include_chars))
 
 password = []
 for _ in range(args.length):
-    password.append( choice(all_chars))
+    password.append(sample(all_chars, 1)[0])
 password_txt = "".join(password)
 
 print(password_txt)
