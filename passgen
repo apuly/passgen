@@ -24,9 +24,6 @@ parser.add_argument("--include-chars", "-i", nargs="?", default="")
 
 args = parser.parse_args()
 
-if args.verbose:
-    print(args)
-
 all_chars = set()
 if not args.all_special:
     punctuation = "".join(c for c in punctuation if c not in "~`^'\"")
@@ -45,6 +42,12 @@ if args.exclude_chars != "":
             all_chars.remove(char)
 if args.include_chars != "":
     all_chars = all_chars.union(set(args.include_chars))
+
+if args.verbose:
+    print(f"arguments: {args}")
+    all_char_string = "".join(sorted(all_chars))
+    print(f"possible characters: {all_char_string}")
+
 
 password = []
 for _ in range(args.length):
