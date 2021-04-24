@@ -4,50 +4,103 @@ import argparse
 
 from string import ascii_lowercase, ascii_uppercase, digits, punctuation
 from random import sample
+import unicodedata
+from random import randint
+from math import ceil, log
+import pyperclip
 
-parser = argparse.ArgumentParser(description="password generator in python")
-parser.add_argument('length', default=32, type=int, nargs='?')
+def generate_unicode_password(args):
+    def next_unicode():
+        while True:
+            c = chr(randint(32, 0x110000-1))
+            try:
+                name = unicodedata.name(c)
+                if not name.startswith("CJK"):
+                    return c
+            except ValueError:
+                pass
 
-arguments = {
-    "no-special": "Removes all special characters",
-    "no-upper": "Removes all capital case letters",
-    "no-lower": "Removes all lower case letters",
-    "no-digits": "Removes all numbers",
-    "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them"
-}
+    bytes_used=0
+    password_txt = ""
+    while bytes_used < args.length:
+        c = next_unicode()
+        if c in args.exclude_chars:
+            continue
+        num = ord(c)
+        num_bytes = ceil(log(num, 2)/8)
+        bytes_used += num_bytes
+        password_txt += c
 
-for argument in arguments:
-    parser.add_argument("--"+argument, help=arguments[argument], action='store_true')
-parser.add_argument("--verbose", "-v", action='store_true')
-parser.add_argument("--exclude-chars", "-e", nargs="?", default="")
-parser.add_argument("--include-chars", "-i", nargs="?", default="")
+    if args.verbose:
+        for c in password_txt:
+            print(f"{unicodedata.name(c)}: {c}")
+    return password_txt
 
-args = parser.parse_args()
+def parse_args():
+    parser = argparse.ArgumentParser(description="""
+    Password generator written in python.
+    Default parameters limited to common ascii characters
+    """)
+    parser.add_argument('length', default=32, type=int, nargs='?', help="Minimum number of bytes in password. Might overflow if characters take up more than 1 byte")
 
-all_chars = set()
-if not args.all_special:
-    punctuation = "".join(c for c in punctuation if c not in "~`^'\"")
-if not args.no_digits:
-    all_chars = all_chars.union(set(digits))
-if not args.no_special:
-    all_chars = all_chars.union(set(punctuation))
-if not args.no_upper:
-    all_chars = all_chars.union(set(ascii_uppercase))
-if not args.no_lower:
-    all_chars = all_chars.union(set(ascii_lowercase))
+    arguments = {
+        "no-special": "Removes all special characters",
+        "no-upper": "Removes all capital case letters",
+        "no-lower": "Removes all lower case letters",
+        "no-digits": "Removes all numbers",
+        "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them"
+    }
 
-if args.exclude_chars != "":
-    for char in args.exclude_chars:
-        if char in all_chars:
-            all_chars.remove(char)
-if args.include_chars != "":
-    all_chars = all_chars.union(set(args.include_chars))
+    for argument in arguments:
+        parser.add_argument("--"+argument, help=arguments[argument], action='store_true')
+    parser.add_argument("--verbose", "-v", action='store_true', help="print more information")
+    parser.add_argument("--exclude-chars", "-e", nargs="?", default="", help="manually exclude specific characters")
+    parser.add_argument("--include-chars", "-i", nargs="?", default="", help="manually include specific characters")
+    parser.add_argument("--unicode", "-u", action="store_true", help="generate passwords using unicode characters recognised by python unicode database. Ignores all other arguments.")
+    parser.add_argument("--copy", "-c", action="store_true", help="copy password to clipboard")
 
-if args.verbose:
-    print(f"arguments: {args}")
-    all_char_string = "".join(sorted(all_chars))
-    print(f"possible characters: {all_char_string}")
+    args = parser.parse_args()
 
-password_txt = "".join(sample(all_chars, 1)[0] for _ in range(args.length))
+    return args
 
-print(password_txt)
+def generate_ascii_password(args):
+    global punctuation
+
+    all_chars = set()
+    if not args.all_special:
+        punctuation = "".join(c for c in punctuation if c not in "~`^'\"")
+    if not args.no_digits:
+        all_chars = all_chars.union(set(digits))
+    if not args.no_special:
+        all_chars = all_chars.union(set(punctuation))
+    if not args.no_upper:
+        all_chars = all_chars.union(set(ascii_uppercase))
+    if not args.no_lower:
+        all_chars = all_chars.union(set(ascii_lowercase))
+
+    if args.exclude_chars != "":
+        for char in args.exclude_chars:
+            if char in all_chars:
+                all_chars.remove(char)
+    if args.include_chars != "":
+        all_chars = all_chars.union(set(args.include_chars))
+
+    if args.verbose:
+        all_char_string = "".join(sorted(all_chars))
+        print(f"possible characters: {all_char_string}")
+
+    password_txt = "".join(sample(all_chars, 1)[0] for _ in range(args.length))
+    return password_txt
+
+if __name__ == "__main__":
+    args = parse_args()
+    if args.verbose:
+        print(f"arguments: {args}")
+
+    if args.unicode:
+        password = generate_unicode_password(args)
+    else:
+        password = generate_ascii_password(args)
+    if args.copy:
+        pyperclip.copy(password)
+    print(password)
