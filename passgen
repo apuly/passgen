@@ -16,7 +16,7 @@ def generate_unicode_password(args):
             c = chr(randint(32, val))
             try:
                 name = unicodedata.name(c)
-                if not name.startswith("CJK"):
+                if args.allow_cjk or not name.startswith("CJK"):
                     return c
             except ValueError:
                 pass
@@ -42,14 +42,15 @@ def parse_args():
     Password generator written in python.
     Default parameters limited to common ascii characters
     """)
-    parser.add_argument('length', default=32, type=int, nargs='?', help="Minimum number of bytes in password. In ascii mode this is just the number of characters")
+    parser.add_argument('length', default=32, type=int, nargs='?', help="Minimum number of bytes in password. In ascii mode this is just the number of characters.")
 
     arguments = {
         "no-special": "Removes all special characters",
         "no-upper": "Removes all capital case letters",
         "no-lower": "Removes all lower case letters",
         "no-digits": "Removes all numbers",
-        "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them"
+        "all-special": "Some chacaters (~`^'\") are disabled by default. This reanables them",
+        "allow-cjk": "allow cjk characters when generating unicode passwords. This will result in more unprintable characters"
     }
 
     for argument in arguments:
