@@ -10,9 +10,10 @@ from math import ceil, log
 import pyperclip
 
 def generate_unicode_password(args):
-    def next_unicode():
+    def next_unicode(max_num_bytes):
         while True:
-            c = chr(randint(32, 0x110000-1))
+            val = min(0x110000-1, 2**(8*max_num_bytes))
+            c = chr(randint(32, val))
             try:
                 name = unicodedata.name(c)
                 if not name.startswith("CJK"):
@@ -20,20 +21,20 @@ def generate_unicode_password(args):
             except ValueError:
                 pass
 
-    bytes_used=0
+    bytes_left = args.length
     password_txt = ""
-    while bytes_used < args.length:
-        c = next_unicode()
+    while bytes_left > 0:
+        c = next_unicode(bytes_left)
         if c in args.exclude_chars:
             continue
         num = ord(c)
         num_bytes = ceil(log(num, 2)/8)
-        bytes_used += num_bytes
+        bytes_left -= num_bytes
         password_txt += c
 
     if args.verbose:
         for c in password_txt:
-            print(f"{unicodedata.name(c)}: {c}")
+            print(f"{c}: {unicodedata.name(c)}")
     return password_txt
 
 def parse_args():
@@ -41,7 +42,7 @@ def parse_args():
     Password generator written in python.
     Default parameters limited to common ascii characters
     """)
-    parser.add_argument('length', default=32, type=int, nargs='?', help="Minimum number of bytes in password. Might overflow if characters take up more than 1 byte")
+    parser.add_argument('length', default=32, type=int, nargs='?', help="Minimum number of bytes in password. In ascii mode this is just the number of characters")
 
     arguments = {
         "no-special": "Removes all special characters",
@@ -101,6 +102,7 @@ if __name__ == "__main__":
         password = generate_unicode_password(args)
     else:
         password = generate_ascii_password(args)
+    print(password)
     if args.copy:
         pyperclip.copy(password)
-    print(password)
+        print("password has been copied to your clipboard")
